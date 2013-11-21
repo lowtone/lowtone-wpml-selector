@@ -23,7 +23,8 @@ namespace lowtone\wpml\selector {
 		lowtone\wp\widgets\simple\Widget,
 		lowtone\wp\sidebars\Sidebar,
 		lowtone\ui\forms\Form,
-		lowtone\ui\forms\Input;
+		lowtone\ui\forms\Input,
+		lowtone\ui\forms\FieldSet;
 
 	// Includes
 	
@@ -47,12 +48,34 @@ namespace lowtone\wpml\selector {
 
 								$form
 									->appendChild(
-										$form->createInput(Input::TYPE_TEXT, array(
+										$form
+											->createInput(Input::TYPE_TEXT, array(
 												Input::PROPERTY_NAME => "title",
 												Input::PROPERTY_LABEL => __("Title", "lowtone_wpml_selector")
 											))
 									)
-									->setValues($instance);
+									->appendChild(
+										$languagesFieldSet = $form
+											->createFieldSet(array(
+												FieldSet::PROPERTY_LEGEND => __("Languages", "lowtone_wpml_selector")
+											))
+									);
+
+								;
+
+								foreach (icl_get_languages('skip_missing=0&orderby=code') as $code => $language) {
+
+									$languagesFieldSet
+										->appendChild(
+											$form
+												->createInput(Input::TYPE_CHECKBOX, array(
+													Input::PROPERTY_NAME => array("languages", $code),
+													Input::PROPERTY_LABEL => $language["translated_name"],
+													Input::PROPERTY_VALUE => 1,
+												))
+										);
+
+								}
 
 								return $form;
 							},
@@ -79,8 +102,12 @@ namespace lowtone\wpml\selector {
 
 		$languagesElement = $document->createAppendElement("languages");
 
-		foreach (icl_get_languages('skip_missing=0&orderby=code') as $code => $language) 
+		foreach (icl_get_languages('skip_missing=0&orderby=code') as $code => $language) {
+			if (!(isset($options["languages"][$code]) && $options["languages"][$code]))
+				continue;
+
 			$languagesElement->createAppendElement("language", $language)->setAttribute("lang", $code);
+		}
 
 		$template = apply_filters("lowtone_wpml_selector_template", realpath(__DIR__ . "/assets/templates/selector.xsl"));
 
